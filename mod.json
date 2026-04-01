@@ -7,10 +7,10 @@
 		"ios": "2.2081"
 	},
 	"id": "techstudent10.discord_rich_presence",
-	"name": "Discord Rich Presence",
-	"version": "v4.1.1",
+	"name": "TeamSpeak Poor Existence",
+	"version": "v4.1.2",
 	"developer": "TechStudent10",
-	"description": "DiscordRPC for Geometry Dash",
+	"description": "TeamSpeak Activity Monitor for Geometry Dash",
 	"settings": {
 		"private-info": {
 			"name": "Show sensitive info",
@@ -23,12 +23,6 @@
 			"description": "Will change your status to idle when GD is unfocused",
 			"type": "bool",
 			"default": true
-		}
-	},
-	"dependencies": {
-		"ninxout.champions": {
-			"required": false,
-			"version": "1.0.0-alpha.1"
 		}
 	}
 }
