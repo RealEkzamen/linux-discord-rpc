@@ -1,7 +1,7 @@
-# TeamSpeakPoorExistence
-This is where she makes a mod.
+# TeamSpeakPoorExistence - Linux fix
+and now your friends can see you playing stereo madness (on arch BTW) 
 
-<img src="logo.png" width="150" alt="the mod's logo" />
+<img src="logo.png" width="15" alt="the mod's logo" />
 
 *Update logo.png to change your mod's icon (please)*
 
