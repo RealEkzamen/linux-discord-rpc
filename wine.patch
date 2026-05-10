@@ -1,11 +1,28 @@
 --- src/platform/windows.cpp
 +++ src/platform/windows.cpp
-@@ -341,7 +341,7 @@
+@@ -198,7 +198,12 @@
+         }
+ 
+         CloseHandle(hReadPipe);
+-        return "";
++        
++        std::string fallback = unixPath;
++        for (char& c : fallback) {
++            if (c == '/') c = '\\';
++        }
++        return "Z:" + fallback;
+     }
+ }
+ 
+@@ -341,9 +346,9 @@
  
          for (auto& dir : wine::getCandidatePaths()) {
              for (int i = 0; i < 10; ++i) {
 -                auto socketPath = wine::convertWinePathToWindows(fmt::format("{}\\discord-ipc-{}", dir, i));
 +                auto socketPath = wine::convertWinePathToWindows(fmt::format("{}/discord-ipc-{}", dir, i));
                  if (socketPath.empty()) {
-                     return false;
+-                    return false;
++                    continue;
                  }
+ 
+                 struct UnixAddr {
