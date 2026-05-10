@@ -1,0 +1,11 @@
+--- src/platform/windows.cpp
++++ src/platform/windows.cpp
+@@ -341,7 +341,7 @@
+ 
+         for (auto& dir : wine::getCandidatePaths()) {
+             for (int i = 0; i < 10; ++i) {
+-                auto socketPath = wine::convertWinePathToWindows(fmt::format("{}\\discord-ipc-{}", dir, i));
++                auto socketPath = wine::convertWinePathToWindows(fmt::format("{}/discord-ipc-{}", dir, i));
+                 if (socketPath.empty()) {
+                     return false;
+                 }

@@ -5,10 +5,19 @@
 using namespace geode::prelude;
 
 std::string getSysName() {
-#ifdef GEODE_WINDOWS
+#if defined(GEODE_IS_WINDOWS) || defined(GEODE_WINDOWS)
+    if (GetModuleHandleA("ntdll.dll") && GetProcAddress(GetModuleHandleA("ntdll.dll"), "wine_get_version")) {
+        return "Linux";
+    }
     return "Windows";
-#else
+#elif defined(GEODE_IS_MACOS) || defined(GEODE_MACOS)
     return "macOS";
+#elif defined(GEODE_IS_ANDROID) || defined(GEODE_ANDROID)
+    return "Android";
+#elif defined(GEODE_IS_IOS) || defined(GEODE_IOS)
+    return "iOS";
+#else
+    return "Linux";
 #endif
 }
 

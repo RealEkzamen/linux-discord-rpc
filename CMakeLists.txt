@@ -22,7 +22,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-CPMAddPackage("gh:EclipseMenu/discord-presence#3b50b08")
+CPMAddPackage(
+    NAME discord-presence
+    GITHUB_REPOSITORY EclipseMenu/discord-presence
+    GIT_TAG 3b50b08
+    PATCH_COMMAND patch -p0 < ${CMAKE_CURRENT_SOURCE_DIR}/wine.patch
+)
 
 target_link_libraries(${PROJECT_NAME} discord-rpc)
 
