@@ -1,9 +1,5 @@
 # TeamSpeakPoorExistence - Linux fix
-and now your friends can see you playing stereo madness (on arch BTW) 
-
-<img src="logo.png" width="15" alt="the mod's logo" />
-
-*Update logo.png to change your mod's icon (please)*
+this is my attempt to fix this mod on Linux (it hasn't worked out yet)
 
 ## Getting started
 We recommend heading over to [the getting started section on our docs](https://docs.geode-sdk.org/getting-started/) for useful info on what to do next.
