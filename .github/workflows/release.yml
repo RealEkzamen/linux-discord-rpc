@@ -14,4 +14,4 @@ jobs:
       - uses: hiimjasmine00/release-geode-mod@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          draft: true
+          draft: false
