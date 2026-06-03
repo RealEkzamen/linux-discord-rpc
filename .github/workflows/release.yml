@@ -1,48 +1,25 @@
-name: Build and Release Geode Mod
+name: Release Geode Mod
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
+  workflow_run:
+    workflows: ["Build Geode Mod"]
+    types:
+      - completed
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-        - name: Windows
-          os: windows-latest
-        - name: macOS
-          os: macos-latest
-
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build the mod
-        uses: geode-sdk/build-geode-mod@main
-        with:
-          bindings: geode-sdk/bindings
-          bindings-ref: main
-          combine: true
-          target: ${{ matrix.config.target }}
-
-  package:
-    name: Package and Release
+  release:
+    name: Release mod
     runs-on: ubuntu-latest
-    needs: build
+    # Only release when the build succeeded on master (or when run manually)
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master') }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: geode-sdk/build-geode-mod/combine@main
-        id: build
 
       - uses: hiimjasmine00/release-geode-mod@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          replace: true
+          branch: master
           draft: false
