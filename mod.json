@@ -6,11 +6,11 @@
 		"mac": "2.2081",
 		"ios": "2.2081"
 	},
-	"id": "techstudent10.discord_rich_presence",
-	"name": "TeamSpeak Poor Existence",
-	"version": "v4.1.4",
-	"developer": "TechStudent10",
-	"description": "TeamSpeak Activity Monitor for Geometry Dash",
+	"id": "realekzamen.discord_rich_presence",
+	"name": "Discord Rich Presence",
+	"version": "1.0.0",
+	"developer": "RealEkzamen",
+	"description": "Discord Rich Presence for Geometry Dash, now working on Linux",
 	"settings": {
 		"private-info": {
 			"name": "Show sensitive info",
