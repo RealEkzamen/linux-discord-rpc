@@ -45,5 +45,5 @@ jobs:
       - uses: hiimjasmine00/release-geode-mod@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          build-output: ${{ steps.build.outputs.build-output }}
+          path: ${{ steps.build.outputs.build-output }}
           draft: false
