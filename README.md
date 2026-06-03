@@ -1,5 +1,5 @@
 # TeamSpeakPoorExistence - Linux fix
-this is my attempt to fix this mod on Linux (it hasn't worked out yet)
+and now your friends can see you playing stereo madness
 
 ## Getting started
 We recommend heading over to [the getting started section on our docs](https://docs.geode-sdk.org/getting-started/) for useful info on what to do next.
