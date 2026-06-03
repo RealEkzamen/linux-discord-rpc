@@ -1,3 +1,7 @@
+## v1.0.0
+* Fix Discord Rich Presence on Linux (Wine/Proton): bridge Discord's IPC socket through a small python relay, since Wine doesn't support `AF_UNIX`
+* Rebrand and first release of this fork
+
 ## v4.1.0
 * Update to Geode v5.0.0 and GD 2.2081
 * Remove the old DRPC API
