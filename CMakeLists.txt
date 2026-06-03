@@ -26,7 +26,7 @@ CPMAddPackage(
     NAME discord-presence
     GITHUB_REPOSITORY EclipseMenu/discord-presence
     GIT_TAG 3b50b08
-    PATCH_COMMAND patch -p0 < ${CMAKE_CURRENT_SOURCE_DIR}/wine.patch
+    PATCH_COMMAND patch -p0 --forward < ${CMAKE_CURRENT_SOURCE_DIR}/wine.patch || true
 )
 
 target_link_libraries(${PROJECT_NAME} discord-rpc)

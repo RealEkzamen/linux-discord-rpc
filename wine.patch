@@ -1,28 +1,112 @@
 --- src/platform/windows.cpp
 +++ src/platform/windows.cpp
-@@ -198,7 +198,12 @@
+@@ -326,44 +326,82 @@ namespace discord::platform {
+     }
+ 
+     bool PipeConnection::openUnix() noexcept {
+-        auto basePath = wine::getTempPath();
+-        if (basePath.empty()) {
++        // Wine/Proton does not implement AF_UNIX in its Winsock layer
++        // (socket(AF_UNIX, ...) fails with WSAEAFNOSUPPORT), so we cannot reach
++        // Discord's IPC unix socket directly. Instead we spawn a tiny native
++        // python3 relay that bridges the unix socket to a loopback TCP port, and
++        // connect to that port over AF_INET, which Wine does support. The Discord
++        // IPC framing is transport-agnostic, so it flows over TCP unchanged.
++
++        // base64-encoded python relay: argv[1] is the loopback port to dial back;
++        // it locates discord-ipc-N and pumps bytes between the two sockets.
++        static constexpr char const* relayScript =
++            "aW1wb3J0IHNvY2tldCxzeXMsb3Msc2VsZWN0CnBvcnQ9aW50KHN5cy5hcmd2WzFdKQpiYXNlPW9zLmVudmlyb24uZ2V0KCJYREdfUlVOVElNRV9ESVIiKSBvciAiL3J1bi91c2VyLyVkIiVvcy5nZXR1aWQoKQpkaXJzPVtiYXNlLGJhc2UrIi9zbmFwLmRpc2NvcmQiLGJhc2UrIi9hcHAvY29tLmRpc2NvcmRhcHAuRGlzY29yZCIsYmFzZSsiL2FwcC9jb20uZGlzY29yZGFwcC5EaXNjb3JkQ2FuYXJ5Il0KdT1Ob25lCmZvciBkIGluIGRpcnM6CiBmb3IgaSBpbiByYW5nZSgxMCk6CiAgcD0iJXMvZGlzY29yZC1pcGMtJWQiJShkLGkpCiAgaWYgbm90IG9zLnBhdGguZXhpc3RzKHApOmNvbnRpbnVlCiAgdHJ5OgogICBzPXNvY2tldC5zb2NrZXQoc29ja2V0LkFGX1VOSVgsc29ja2V0LlNPQ0tfU1RSRUFNKTtzLmNvbm5lY3QocCk7dT1zO2JyZWFrCiAgZXhjZXB0IE9TRXJyb3I6CiAgIHRyeTpzLmNsb3NlKCkKICAgZXhjZXB0IE9TRXJyb3I6cGFzcwogaWYgdTpicmVhawppZiBub3QgdTpzeXMuZXhpdCgyKQp0PXNvY2tldC5zb2NrZXQoc29ja2V0LkFGX0lORVQsc29ja2V0LlNPQ0tfU1RSRUFNKQp0LmNvbm5lY3QoKCIxMjcuMC4wLjEiLHBvcnQpKQpzcz1bdSx0XQp0cnk6CiB3aGlsZSAxOgogIHIsXyxfPXNlbGVjdC5zZWxlY3Qoc3MsW10sW10pCiAgZm9yIHggaW4gcjoKICAgZGF0YT14LnJlY3YoNjU1MzYpCiAgIG89dCBpZiB4IGlzIHUgZWxzZSB1CiAgIGlmIG5vdCBkYXRhOnN5cy5leGl0KDApCiAgIG8uc2VuZGFsbChkYXRhKQpmaW5hbGx5OgogdS5jbG9zZSgpO3QuY2xvc2UoKQo=";
++
++        SOCKET listener = ::socket(AF_INET, SOCK_STREAM, 0);
++        if (listener == INVALID_SOCKET) {
+             return false;
          }
  
-         CloseHandle(hReadPipe);
--        return "";
-+        
-+        std::string fallback = unixPath;
-+        for (char& c : fallback) {
-+            if (c == '/') c = '\\';
-+        }
-+        return "Z:" + fallback;
-     }
- }
+-        auto socket = ::socket(AF_UNIX, SOCK_STREAM, 0);
+-        if (socket == INVALID_SOCKET) {
++        sockaddr_in addr{};
++        addr.sin_family = AF_INET;
++        addr.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
++        addr.sin_port = 0;
++        if (::bind(listener, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0 ||
++            ::listen(listener, 1) != 0) {
++            ::closesocket(listener);
+             return false;
+         }
  
-@@ -341,9 +346,9 @@
- 
-         for (auto& dir : wine::getCandidatePaths()) {
-             for (int i = 0; i < 10; ++i) {
+-        u_long mode = 1;
+-        ::ioctlsocket(socket, FIONBIO, &mode);
+-
+-        for (auto& dir : wine::getCandidatePaths()) {
+-            for (int i = 0; i < 10; ++i) {
 -                auto socketPath = wine::convertWinePathToWindows(fmt::format("{}\\discord-ipc-{}", dir, i));
-+                auto socketPath = wine::convertWinePathToWindows(fmt::format("{}/discord-ipc-{}", dir, i));
-                 if (socketPath.empty()) {
+-                if (socketPath.empty()) {
 -                    return false;
-+                    continue;
-                 }
+-                }
++        int addrLen = sizeof(addr);
++        ::getsockname(listener, reinterpret_cast<sockaddr*>(&addr), &addrLen);
++        unsigned short port = ::ntohs(addr.sin_port);
  
-                 struct UnixAddr {
+-                struct UnixAddr {
+-                    short sun_family;
+-                    char sun_path[108] = {};
+-                };
++        // start.exe /unix launches a native Linux process from within wine
++        auto command = fmt::format(
++            "start.exe /unix /usr/bin/env python3 -c "
++            "\"import base64;exec(base64.b64decode('{}'))\" {}",
++            relayScript, port
++        );
+ 
+-                UnixAddr addr{AF_UNIX};
+-                std::memcpy(addr.sun_path, socketPath.c_str(), std::min(socketPath.size(), sizeof(addr.sun_path) - 1));
++        STARTUPINFOA si{};
++        si.cb = sizeof(si);
++        PROCESS_INFORMATION pi{};
++        std::string commandBuffer = command;
++        if (!::CreateProcessA(
++                nullptr, commandBuffer.data(), nullptr, nullptr, FALSE,
++                CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi
++            )) {
++            ::closesocket(listener);
++            return false;
++        }
++        ::CloseHandle(pi.hProcess);
++        ::CloseHandle(pi.hThread);
++
++        // wait for the relay to dial back
++        fd_set readSet;
++        FD_ZERO(&readSet);
++        FD_SET(listener, &readSet);
++        timeval timeout{};
++        timeout.tv_sec = 5;
++        if (::select(0, &readSet, nullptr, nullptr, &timeout) <= 0) {
++            ::closesocket(listener);
++            return false;
++        }
+ 
+-                if (::connect(socket, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
+-                    m_pipe = reinterpret_cast<HANDLE>(socket);
+-                    m_isOpen = true;
+-                    m_useWineFallback = true;
+-                    return true;
+-                }
+-            }
++        SOCKET connection = ::accept(listener, nullptr, nullptr);
++        ::closesocket(listener);
++        if (connection == INVALID_SOCKET) {
++            return false;
+         }
+ 
+-        return false;
++        u_long mode = 1;
++        ::ioctlsocket(connection, FIONBIO, &mode);
++
++        m_pipe = reinterpret_cast<HANDLE>(connection);
++        m_isOpen = true;
++        m_useWineFallback = true;
++        return true;
+     }
+ 
+     bool PipeConnection::closeUnix() noexcept {
